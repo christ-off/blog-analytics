@@ -1,0 +1,107 @@
+<!-- 
+  Blog Analytics Charts
+  Add this snippet to your Jekyll about page (e.g. about.md or about.html).
+  Chart.js is loaded from cdnjs (no cookies, no tracking).
+-->
+
+<h2>Statistiques du site</h2>
+<p><small id="analytics-date"></small></p>
+
+<div class="mb-4">
+  <canvas id="visitorsChart" height="120"></canvas>
+</div>
+
+<div class="mb-4">
+  <canvas id="pagesChart" height="250"></canvas>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.7/chart.umd.min.js"
+        integrity="sha512-bgqBLAHpxMHKgO/gMBs5P0VrkqMEGKYjyzMRQcRMd0HBb3p8ry7L8+bTAZ74sTaIvCR1DSiyngY8sZjcLkhig=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+<script>
+(async function() {
+  const BASE = '/about/data';
+
+  try {
+    const [vRes, pRes] = await Promise.all([
+      fetch(`${BASE}/visitors.json`),
+      fetch(`${BASE}/pages.json`)
+    ]);
+
+    if (!vRes.ok || !pRes.ok) throw new Error('Failed to load data');
+
+    const visitors = await vRes.json();
+    const pages    = await pRes.json();
+
+    // Show generation date
+    const d = new Date(visitors.generated);
+    document.getElementById('analytics-date').textContent =
+      `Dernière mise à jour : ${d.toLocaleDateString('fr-FR')} à ${d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}`;
+
+    // --- Daily visitors (vertical bar) ---
+    new Chart(document.getElementById('visitorsChart'), {
+      type: 'bar',
+      data: {
+        labels: visitors.labels.map(function(d) {
+          return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+        }),
+        datasets: [{
+          label: 'Visiteurs uniques',
+          data: visitors.values,
+          backgroundColor: 'rgba(75, 192, 192, 0.7)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1,
+          borderRadius: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: 'Visiteurs par jour (30 derniers jours)', font: { size: 14 } },
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } },
+          x: { ticks: { maxRotation: 45, font: { size: 10 } } }
+        }
+      }
+    });
+
+    // --- Top pages (horizontal bar) ---
+    new Chart(document.getElementById('pagesChart'), {
+      type: 'bar',
+      data: {
+        labels: pages.labels.map(function(p) {
+          // Shorten long paths for readability
+          if (p.length > 40) return p.substring(0, 37) + '...';
+          return p;
+        }),
+        datasets: [{
+          label: 'Pages vues',
+          data: pages.values,
+          backgroundColor: 'rgba(54, 162, 235, 0.7)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1,
+          borderRadius: 3
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          title: { display: true, text: 'Pages les plus visitées (30 derniers jours)', font: { size: 14 } },
+          legend: { display: false }
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 } },
+          y: { ticks: { font: { size: 11 } } }
+        }
+      }
+    });
+
+  } catch (e) {
+    console.error('Analytics charts failed:', e);
+  }
+})();
+</script>

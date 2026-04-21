@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Blog analytics - generates daily visitor and top pages charts
+  from CloudFront JSON logs, outputs JSON to static site S3 bucket.
+
+Parameters:
+  LogsBucket:
+    Type: String
+    Description: S3 bucket containing CloudFront JSON logs
+  LogsPrefix:
+    Type: String
+    Default: ''
+    Description: Key prefix for log files (e.g. 'logs/' or '' if at root)
+  WebsiteBucket:
+    Type: String
+    Description: S3 bucket hosting the static website
+  DistributionId:
+    Type: String
+    Description: CloudFront distribution ID (for cache invalidation)
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 300
+    MemorySize: 512
+
+Resources:
+  AnalyticsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler.handler
+      CodeUri: src/
+      Description: Process CloudFront logs and generate chart data
+      Environment:
+        Variables:
+          LOGS_BUCKET: !Ref LogsBucket
+          LOGS_PREFIX: !Ref LogsPrefix
+          WEBSITE_BUCKET: !Ref WebsiteBucket
+          DISTRIBUTION_ID: !Ref DistributionId
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref LogsBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub 'arn:aws:s3:::${WebsiteBucket}/about/data/*'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cloudfront:CreateInvalidation
+              Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${DistributionId}'
+      Events:
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 6 * * ? *)
+            Description: Generate analytics daily at 06:00 UTC
+
+Outputs:
+  FunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt AnalyticsFunction.Arn
+  FunctionName:
+    Description: Lambda function name (for manual invocation)
+    Value: !Ref AnalyticsFunction
