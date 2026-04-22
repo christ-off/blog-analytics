@@ -1,0 +1,14 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "daily-statistics"
+resolve_s3 = true
+s3_prefix = "daily-statistics"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+parameter_overrides = "LogsBucket=\"post-tenebras-lire-access-logs\" LogsPrefix=\"AWSLogs/424590257573/CloudFront/\" WebsiteBucket=\"post-tenebras-lire.net\" DistributionId=\"E1Z5N5X273TPT1\""
+image_repositories = []
+
+[default.global.parameters]
+region = "eu-west-3"

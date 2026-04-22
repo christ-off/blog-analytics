@@ -22,7 +22,7 @@ Parameters:
 Globals:
   Function:
     Runtime: python3.12
-    Timeout: 300
+    Timeout: 600
     MemorySize: 512
 
 Resources:
@@ -45,6 +45,7 @@ Resources:
             - Effect: Allow
               Action:
                 - s3:PutObject
+                - s3:PutObjectAcl
               Resource: !Sub 'arn:aws:s3:::${WebsiteBucket}/about/data/*'
         - Statement:
             - Effect: Allow

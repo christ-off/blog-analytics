@@ -9,6 +9,7 @@ import json
 import os
 import re
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from urllib.parse import unquote
 
@@ -49,7 +50,7 @@ ASSET_RE = re.compile(
     re.IGNORECASE,
 )
 
-DATE_IN_KEY_RE = re.compile(r"_(\d{4}-\d{2}-\d{2})-\d{2}_")
+DATE_IN_KEY_RE = re.compile(r"\.(\d{4}-\d{2}-\d{2})-\d{2}\.")
 
 
 def is_bot(user_agent: str) -> bool:
@@ -82,7 +83,7 @@ def handler(event, context):
 
     # List all log files, filter by date in filename
     paginator = s3.get_paginator("list_objects_v2")
-    files_processed = 0
+    keys = []
 
     for page in paginator.paginate(Bucket=LOGS_BUCKET, Prefix=LOGS_PREFIX):
         for obj in page.get("Contents", []):
@@ -90,16 +91,29 @@ def handler(event, context):
             match = DATE_IN_KEY_RE.search(key)
             if not match:
                 continue
-
             file_date = datetime.strptime(match.group(1), "%Y-%m-%d").date()
             if file_date < start_date or file_date > today:
                 continue
+            keys.append(key)
 
+    def fetch(key):
+        result = defaultdict(set), defaultdict(int)
+        process_log_file(key, result[0], result[1])
+        return result
+
+    files_processed = 0
+    with ThreadPoolExecutor(max_workers=32) as executor:
+        futures = {executor.submit(fetch, k): k for k in keys}
+        for future in as_completed(futures):
             try:
-                process_log_file(key, daily_visitors, page_views)
+                visitors, pages = future.result()
+                for date, ips in visitors.items():
+                    daily_visitors[date].update(ips)
+                for uri, count in pages.items():
+                    page_views[uri] += count
                 files_processed += 1
             except Exception as e:
-                print(f"Error processing {key}: {e}")
+                print(f"Error processing {futures[future]}: {e}")
 
     print(f"Processed {files_processed} log files")
 
@@ -133,6 +147,7 @@ def handler(event, context):
             Body=json.dumps(data, ensure_ascii=False),
             ContentType="application/json",
             CacheControl="max-age=3600",
+            ACL="public-read",
         )
 
     # Invalidate CloudFront cache
