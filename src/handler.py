@@ -46,7 +46,7 @@ PATH_EXCLUDE_RE = re.compile(
 
 ASSET_RE = re.compile(
     r"\.(css|js|png|jpg|jpeg|gif|svg|ico|webp|webm|avif|"
-    r"woff|woff2|ttf|eot|map|xml|json|txt|gz)$",
+    r"woff|woff2|ttf|eot|map|xml|json|txt|gz|zip)$",
     re.IGNORECASE,
 )
 
@@ -59,10 +59,15 @@ def is_bot(user_agent: str) -> bool:
     return bool(BOT_RE.search(unquote(user_agent)))
 
 
+NON_VISIT_PATHS = {"/", "/feeds.xml", "/rss.xml"}
+
+
 def is_page_request(uri: str, method: str, status: str) -> bool:
     if method != "GET":
         return False
     if not status.startswith("2") and not status.startswith("3"):
+        return False
+    if uri in NON_VISIT_PATHS:
         return False
     if PATH_EXCLUDE_RE.search(uri):
         return False
@@ -146,7 +151,7 @@ def handler(event, context):
             Key=f"{OUTPUT_PREFIX}/{filename}",
             Body=json.dumps(data, ensure_ascii=False),
             ContentType="application/json",
-            CacheControl="max-age=3600",
+            CacheControl="max-age=86400",
             ACL="public-read",
         )
 
