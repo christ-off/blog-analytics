@@ -1,1 +1,4 @@
 /.idea/
+/.aws-sam/build/AnalyticsFunction/handler.py
+/.aws-sam/build/template.yaml
+/.aws-sam/build.toml
