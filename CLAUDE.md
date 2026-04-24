@@ -38,7 +38,7 @@ aws lambda invoke \
 ### Data flow
 
 1. Lambda lists all objects under `LOGS_PREFIX` in `LOGS_BUCKET`, filters by date extracted from filename (`_YYYY-MM-DD-HH_` pattern)
-2. Each `.gz` log file is decompressed and parsed as newline-delimited JSON (CloudFront JSON log format)
+2. Each `.gz` log file is decompressed and parsed as TSV (CloudFront standard log format); the `#Fields:` header line drives column mapping
 3. Bots, probes, assets, and non-GET/non-2xx/3xx requests are filtered out
 4. Aggregates unique IPs per day (`daily_visitors`) and page view counts (`page_views`)
 5. Writes `about/data/visitors.json` and `about/data/pages.json` to `WEBSITE_BUCKET`

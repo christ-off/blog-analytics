@@ -185,17 +185,28 @@ def process_log_file(key: str, daily_visitors: dict, page_views: dict):
     response = s3.get_object(Bucket=LOGS_BUCKET, Key=key)
     raw = response["Body"].read()
 
-    # Handle both gzipped and plain files
     try:
         content = gzip.decompress(raw).decode("utf-8")
     except gzip.BadGzipFile:
         content = raw.decode("utf-8")
 
+    fields = None
     for line in content.strip().split("\n"):
         if not line:
             continue
+        if line.startswith("#Fields:"):
+            fields = line[len("#Fields:"):].strip().split("\t")
+            continue
+        if line.startswith("#"):
+            continue
+        if fields is None:
+            continue
 
-        entry = json.loads(line)
+        parts = line.split("\t")
+        if len(parts) != len(fields):
+            continue
+        entry = dict(zip(fields, parts))
+
         user_agent = entry.get("cs(User-Agent)", "")
         uri = entry.get("cs-uri-stem", "")
         method = entry.get("cs-method", "")
