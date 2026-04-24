@@ -9,6 +9,9 @@ AWS SAM application — a Python Lambda that runs daily, reads 30 days of CloudF
 ## Commands
 
 ```bash
+# Tests
+npm test
+
 # Build
 sam build
 
@@ -31,9 +34,16 @@ aws lambda invoke \
 
 ## Architecture
 
-- `src/handler.py` — single Lambda entry point (`handler(event, context)`)
+- `src/handler.mjs` — single Lambda entry point (`handler(event, context)`); pure functions (`isBot`, `isPageRequest`, `parseTsvLines`) are exported for testing
+- `tests/handler.test.mjs` — Vitest unit tests
+- `package.json` — dev dependencies only (Vitest + AWS SDK for local testing); not included in Lambda package (`CodeUri: src/`)
 - `template.yaml` — SAM template; defines the function, IAM policies, schedule, and parameters
 - `chart-snippet.html` — client-side Chart.js snippet to embed in the Jekyll `about.md` page
+
+## Runtime
+
+- Node.js 22, 512 MB, 600s timeout
+- AWS SDK v3 provided by Lambda runtime (no production dependencies)
 
 ### Data flow
 
@@ -50,7 +60,3 @@ aws lambda invoke \
 { "generated": "...", "labels": ["2026-03-22", ...], "values": [42, ...] }
 ```
 
-## Runtime
-
-- Python 3.12, 512 MB, 300s timeout
-- No `requirements.txt` — only stdlib + `boto3` (provided by Lambda runtime)

@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
   Blog analytics - generates daily visitor and top pages charts
-  from CloudFront JSON logs, outputs JSON to static site S3 bucket.
+  from CloudFront TSV logs, outputs JSON to static site S3 bucket.
 
 Parameters:
   LogsBucket:
@@ -21,7 +21,7 @@ Parameters:
 
 Globals:
   Function:
-    Runtime: python3.12
+    Runtime: nodejs22.x
     Timeout: 600
     MemorySize: 512
 
