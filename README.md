@@ -7,7 +7,7 @@ Outputs JSON files to your static site S3 bucket, rendered by Chart.js on your a
 
 ```
 EventBridge (daily 06:00 UTC)
-  └─ Lambda (Python 3.12)
+  └─ Lambda (Node.js 22)
        ├─ Reads last 30 days of CloudFront .gz logs from S3
        ├─ Filters bots, probes, assets
        ├─ Writes visitors.json + pages.json to website S3
@@ -48,7 +48,9 @@ sam local invoke AnalyticsFunction
 
 ```bash
 aws lambda invoke \
-  --function-name $(sam list stack-outputs --output json | jq -r '.[] | select(.OutputKey=="FunctionName") | .OutputValue') \
+  --region eu-west-3 \
+  --cli-read-timeout 0 \
+  --function-name $(sam list stack-outputs --stack-name daily-statistics --region eu-west-3 --output json | jq -r '.[] | select(.OutputKey=="FunctionName") | .OutputValue') \
   /dev/stdout
 ```
 

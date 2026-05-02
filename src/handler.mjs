@@ -14,7 +14,7 @@ const DAYS = 30;
 const TOP_PAGES = 15;
 
 const BOT_RE =
-  /bot|crawl|spider|feedly|feeder|slurp|semrush|ahrefs|python|curl|wget|Go-http|HeadlessChrome|Googlebot|bingbot|YandexBot|Bytespider|DotBot|MJ12bot|PetalBot|GPTBot|ClaudeBot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|DataForSeoBot|Applebot|archive\.org|Sogou|Baiduspider|ia_archiver|Uptimebot|monitoring|pingdom|StatusCake/i;
+  /bot|crawl|spider|feedly|feeder|slurp|semrush|ahrefs|python|curl|wget|Go-http|HeadlessChrome|Googlebot|bingbot|YandexBot|Bytespider|DotBot|MJ12bot|PetalBot|GPTBot|ClaudeBot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|DataForSeoBot|Applebot|archive\.org|Sogou|Baiduspider|ia_archiver|Uptimebot|monitoring|pingdom|StatusCake|PTST|OWLer|LinuxGetUrl/i;
 
 const PATH_EXCLUDE_RE =
   /\.(php|asp|aspx|cgi)$|wp-|xmlrpc|wp-login|\.env|\.git|\/admin|\/login|phpmyadmin/i;

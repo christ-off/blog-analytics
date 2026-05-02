@@ -8,6 +8,11 @@ describe("isBot", () => {
     expect(isBot("Mozilla/5.0 (compatible; Googlebot/2.1)")).toBe(true));
   it("returns true for ClaudeBot", () => expect(isBot("ClaudeBot/1.0")).toBe(true));
   it("returns true for curl", () => expect(isBot("curl/7.88.1")).toBe(true));
+  it("returns true for PTST", () =>
+    expect(isBot("Mozilla/5.0 (X11; Linux) Chrome/147 Safari/537.36 PTST/260402")).toBe(true));
+  it("returns true for OWLer", () => expect(isBot("OWLer")).toBe(true));
+  it("returns true for LinuxGetUrl", () =>
+    expect(isBot("LinuxGetUrl/2.0 closedaiengine@umich.edu (Linux)")).toBe(true));
   it("returns false for Firefox", () =>
     expect(isBot("Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0")).toBe(false));
   it("returns false for Safari", () =>
