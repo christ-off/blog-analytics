@@ -23,7 +23,7 @@ jobs:
 
       - name: Commit coverage report
         run: |
-          git add coverage/lcov.info
+          git add -f coverage/lcov.info
           git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit -m "chore: update coverage report" || true
 
       - run: git push || true
