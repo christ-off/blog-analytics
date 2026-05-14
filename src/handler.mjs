@@ -14,7 +14,7 @@ const DAYS = 30;
 const TOP_PAGES = 15;
 
 const BOT_RE =
-  /bot|crawl|spider|feedly|feeder|slurp|semrush|ahrefs|python|curl|wget|Go-http|HeadlessChrome|Googlebot|bingbot|YandexBot|Bytespider|DotBot|MJ12bot|PetalBot|GPTBot|ClaudeBot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|DataForSeoBot|Applebot|archive\.org|Sogou|Baiduspider|ia_archiver|Uptimebot|monitoring|pingdom|StatusCake|PTST|OWLer|LinuxGetUrl/i;
+  /bot|crawl|spider|feedly|feeder|slurp|semrush|ahrefs|python|curl|wget|Go-http|HeadlessChrome|Googlebot|bingbot|YandexBot|Bytespider|DotBot|MJ12bot|PetalBot|GPTBot|ClaudeBot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|DataForSeoBot|Applebot|archive\.org|Sogou|Baiduspider|ia_archiver|Uptimebot|monitoring|pingdom|StatusCake|PTST|OWLer|LinuxGetUrl|ChatGPT|GoogleA|Firebase|NotebookLM|Meta-External|Perplexity|Kentik|Chronicle|Kokot|La-nazanin|tracker|UptimeKuma|anthropic-ai|AutoRAG|bigsur|Censys|cohere-ai|Cotoyogi|Devin|Extended|GoogleOther|img2|laion|LAION|LCC|Manus|Meta-ExternalFetcher|meta-webindexer|Amzn|BuyForMe|Anomura|amazon-kendra|Gemini-Deep|Gemini-CLI|Agent|Awario/i;
 
 const PATH_EXCLUDE_RE =
   /\.(php|asp|aspx|cgi)$|wp-|xmlrpc|wp-login|\.env|\.git|\/admin|\/login|phpmyadmin/i;

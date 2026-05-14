@@ -13,6 +13,34 @@ describe("isBot", () => {
   it("returns true for OWLer", () => expect(isBot("OWLer")).toBe(true));
   it("returns true for LinuxGetUrl", () =>
     expect(isBot("LinuxGetUrl/2.0 closedaiengine@umich.edu (Linux)")).toBe(true));
+  it("returns true for ChatGPT Agent", () =>
+    expect(isBot("ChatGPT Agent")).toBe(true));
+  it("returns true for GoogleAgent-Mariner", () =>
+    expect(isBot("GoogleAgent-Mariner/1.0")).toBe(true));
+  it("returns true for Google-Agent", () =>
+    expect(isBot("Google-Agent/1.0")).toBe(true));
+  it("returns true for Google-Firebase", () =>
+    expect(isBot("Google-Firebase")).toBe(true));
+  it("returns true for Google-NotebookLM", () =>
+    expect(isBot("Google-NotebookLM")).toBe(true));
+  it("returns true for Meta-ExternalAgent", () =>
+    expect(isBot("Meta-ExternalAgent")).toBe(true));
+  it("returns true for Perplexity-User", () =>
+    expect(isBot("Perplexity-User/1.0")).toBe(true));
+  it("returns true for UptimeKuma", () =>
+    expect(isBot("UptimeKuma/1.0")).toBe(true));
+  it("returns true for ChronicleCrawler", () =>
+    expect(isBot("ChronicleCrawler/1.0")).toBe(true));
+  it("returns true for Kokot-Hub", () =>
+    expect(isBot("Kokot-Hub/1.0")).toBe(true));
+  it("returns true for La-nazanin-LA", () =>
+    expect(isBot("La-nazanin-LA")).toBe(true));
+  it("returns true for CCBot", () =>
+    expect(isBot("CCBot/2.0")).toBe(true));
+  it("returns true for SemrushBot", () =>
+    expect(isBot("SemrushBot/0.99")).toBe(true));
+  it("returns true for AhrefsBot", () =>
+    expect(isBot("Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)")).toBe(true));
   it("returns false for Firefox", () =>
     expect(isBot("Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0")).toBe(false));
   it("returns false for Safari", () =>
