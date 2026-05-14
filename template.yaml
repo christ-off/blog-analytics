@@ -26,12 +26,20 @@ Globals:
     MemorySize: 512
 
 Resources:
+  AnalyticsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AnalyticsFunction}'
+      RetentionInDays: 30
+
   AnalyticsFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: handler.handler
       CodeUri: src/
       Description: Process CloudFront logs and generate chart data
+      Logging:
+        LogGroup: !Ref AnalyticsLogGroup
       Environment:
         Variables:
           LOGS_BUCKET: !Ref LogsBucket

@@ -143,10 +143,10 @@ export async function handler(_event, _context) {
     values: sorted.map(p => p[1]),
   };
 
-  for (const [filename, data] of [["visitors.json", visitorsJson], ["pages.json", pagesJson]]) {
+  for (const { name, data } of [{ name: "visitors.json", data: visitorsJson }, { name: "pages.json", data: pagesJson }]) {
     await s3.send(new PutObjectCommand({
       Bucket: WEBSITE_BUCKET,
-      Key: `${OUTPUT_PREFIX}/${filename}`,
+      Key: `${OUTPUT_PREFIX}/${name}`,
       Body: JSON.stringify(data),
       ContentType: "application/json",
       CacheControl: "max-age=86400",

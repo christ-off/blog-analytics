@@ -16,9 +16,8 @@
 </div>
 
 <script src="/javascript/chart.umd.min.js"></script>
-<script>
-(async function() {
-  const BASE = '/about/data';
+<script type="module">
+const BASE = '/about/data';
 
   try {
     const [vRes, pRes] = await Promise.all([
@@ -97,8 +96,7 @@
       }
     });
 
-  } catch (e) {
-    console.error('Analytics charts failed:', e);
-  }
-})();
+} catch (e) {
+  console.error('Analytics charts failed:', e);
+}
 </script>
