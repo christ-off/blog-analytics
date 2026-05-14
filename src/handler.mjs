@@ -1,6 +1,6 @@
 import { S3Client, GetObjectCommand, PutObjectCommand, paginateListObjectsV2 } from "@aws-sdk/client-s3";
 import { CloudFrontClient, CreateInvalidationCommand } from "@aws-sdk/client-cloudfront";
-import { gunzipSync } from "zlib";
+import { gunzipSync } from "node:zlib";
 
 const s3 = new S3Client({});
 const cf = new CloudFrontClient({});
@@ -13,8 +13,13 @@ const OUTPUT_PREFIX = "about/data";
 const DAYS = 30;
 const TOP_PAGES = 15;
 
-const BOT_RE =
-  /bot|crawl|spider|feedly|feeder|slurp|semrush|ahrefs|python|curl|wget|Go-http|HeadlessChrome|Googlebot|bingbot|YandexBot|Bytespider|DotBot|MJ12bot|PetalBot|GPTBot|ClaudeBot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|DataForSeoBot|Applebot|archive\.org|Sogou|Baiduspider|ia_archiver|Uptimebot|monitoring|pingdom|StatusCake|PTST|OWLer|LinuxGetUrl|ChatGPT|GoogleA|Firebase|NotebookLM|Meta-External|Perplexity|Kentik|Chronicle|Kokot|La-nazanin|tracker|UptimeKuma|anthropic-ai|AutoRAG|bigsur|Censys|cohere-ai|Cotoyogi|Devin|Extended|GoogleOther|img2|laion|LAION|LCC|Manus|Meta-ExternalFetcher|meta-webindexer|Amzn|BuyForMe|Anomura|amazon-kendra|Gemini-Deep|Gemini-CLI|Agent|Awario/i;
+const BOT_RES = [
+  /bot|crawl|spider|feedly|feeder|slurp|semrush|ahrefs|python|curl|wget|Go-http|HeadlessChrome|Googlebot|bingbot/i,
+  /YandexBot|Bytespider|DotBot|MJ12bot|PetalBot|GPTBot|ClaudeBot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|DataForSeoBot|Applebot|archive\.org|Sogou/i,
+  /Baiduspider|ia_archiver|Uptimebot|monitoring|pingdom|StatusCake|PTST|OWLer|LinuxGetUrl|ChatGPT|GoogleA|Firebase|NotebookLM|Meta-External|Perplexity/i,
+  /Kentik|Chronicle|Kokot|La-nazanin|tracker|UptimeKuma|anthropic-ai|AutoRAG|bigsur|Censys|cohere-ai|Cotoyogi|Devin|Extended|GoogleOther/i,
+  /img2|laion|LAION|LCC|Manus|Meta-ExternalFetcher|meta-webindexer|Amzn|BuyForMe|Anomura|amazon-kendra|Gemini-Deep|Gemini-CLI|Agent|Awario/i,
+];
 
 const PATH_EXCLUDE_RE =
   /\.(php|asp|aspx|cgi)$|wp-|xmlrpc|wp-login|\.env|\.git|\/admin|\/login|phpmyadmin/i;
@@ -28,7 +33,8 @@ const NON_VISIT_PATHS = new Set(["/", "/feeds.xml", "/rss.xml"]);
 
 export function isBot(userAgent) {
   if (!userAgent || userAgent === "-") return true;
-  return BOT_RE.test(decodeURIComponent(userAgent));
+  const ua = decodeURIComponent(userAgent);
+  return BOT_RES.some(re => re.test(ua));
 }
 
 export function isPageRequest(uri, method, status) {

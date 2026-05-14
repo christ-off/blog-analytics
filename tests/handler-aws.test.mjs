@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { gzipSync } from "zlib";
+import { gzipSync } from "node:zlib";
 
 const { mockS3Send, mockCFSend, mockPaginator } = vi.hoisted(() => ({
   mockS3Send: vi.fn(),
