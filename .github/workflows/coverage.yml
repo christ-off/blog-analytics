@@ -1,17 +1,21 @@
-name: Coverage
+name: SonarCloud
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  coverage:
+  sonarcloud:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -19,11 +23,9 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run test:ci
+      - run: npm test
 
-      - name: Commit coverage report
-        run: |
-          git add -f coverage/lcov.info
-          git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit -m "chore: update coverage report" || true
-
-      - run: git push || true
+      - uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
