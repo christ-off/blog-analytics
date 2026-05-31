@@ -15,10 +15,13 @@ const TOP_PAGES = 15;
 
 const BOT_RES = [
   /bot|crawl|spider|feedly|feeder|slurp|semrush|ahrefs|python|curl|wget|Go-http|HeadlessChrome|Googlebot|bingbot/i,
-  /YandexBot|Bytespider|DotBot|MJ12bot|PetalBot|GPTBot|ClaudeBot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|DataForSeoBot|Applebot|archive\.org|Sogou/i,
+  /Yandex|Bytespider|DotBot|MJ12bot|PetalBot|GPTBot|Claude|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|DataForSeoBot|Applebot|archive\.org|Sogou/i,
   /Baiduspider|ia_archiver|Uptimebot|monitoring|pingdom|StatusCake|PTST|OWLer|LinuxGetUrl|ChatGPT|GoogleA|Firebase|NotebookLM|Meta-External|Perplexity/i,
   /Kentik|Chronicle|Kokot|La-nazanin|tracker|UptimeKuma|anthropic-ai|AutoRAG|bigsur|Censys|cohere-ai|Cotoyogi|Devin|Extended|GoogleOther/i,
   /img2|laion|LAION|LCC|Manus|Meta-ExternalFetcher|meta-webindexer|Amzn|BuyForMe|Anomura|amazon-kendra|Gemini-Deep|Gemini-CLI|Agent|Awario/i,
+  /AIWebIndex|kagi|MistralAI|newsai|NovaAct|Observer|omgili|OpenAI|opencode|Operator|Panscient|Poggio|Scrapy|Shap|TerraCotta|Terra Cotta|Trae|YaK/i,
+  /sindresorhus|presto|trident|seamus|crios|fxios|pimeyes|builtwith|yasearch|yaapp|greedyhand/i,
+  /chrome\/9[0-4]\.\d+|iphone os [1-9]_/i,
 ];
 
 const PATH_EXCLUDE_RE =
