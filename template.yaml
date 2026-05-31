@@ -38,8 +38,6 @@ Resources:
       Handler: handler.handler
       CodeUri: src/
       Description: Process CloudFront logs and generate chart data
-      Logging:
-        LogGroup: !Ref AnalyticsLogGroup
       Environment:
         Variables:
           LOGS_BUCKET: !Ref LogsBucket
