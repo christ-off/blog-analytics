@@ -1,2 +1,12 @@
 node_modules/
 coverage/
+/.idea/.gitignore
+/.idea/blog-analytics.iml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/sonarlint.xml
+/.idea/vcs.xml
+/.rtk/filters.toml
+/.aws-sam/build/AnalyticsFunction/handler.mjs
+/.aws-sam/build/template.yaml
+/.aws-sam/build.toml
