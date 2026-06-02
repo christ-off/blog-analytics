@@ -32,7 +32,7 @@ const ASSET_RE =
 
 const DATE_IN_KEY_RE = /\.(\d{4}-\d{2}-\d{2})-\d{2}\./;
 
-const NON_VISIT_PATHS = new Set(["/", "/feeds.xml", "/rss.xml"]);
+const NON_VISIT_PATHS = new Set(["/", "/feed.xml", "/rss.xml"]);
 
 export function isBot(userAgent) {
   if (!userAgent || userAgent === "-") return true;
