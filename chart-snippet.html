@@ -65,13 +65,13 @@ const BASE = '/about/data';
     });
 
     // --- Top pages (horizontal bar) ---
+    const mobile = window.innerWidth < 480;
+    const maxLen = mobile ? 22 : 40;
     new Chart(document.getElementById('pagesChart'), {
       type: 'bar',
       data: {
         labels: pages.labels.map(function(p) {
-          // Shorten long paths for readability
-          if (p.length > 40) return p.substring(0, 37) + '...';
-          return p;
+          return p.length > maxLen ? '…' + p.slice(-(maxLen - 1)) : p;
         }),
         datasets: [{
           label: 'Pages vues',
@@ -91,7 +91,10 @@ const BASE = '/about/data';
         },
         scales: {
           x: { beginAtZero: true, ticks: { precision: 0 } },
-          y: { ticks: { font: { size: 11 } } }
+          y: {
+            afterFit(scale) { scale.width = Math.min(scale.width, mobile ? 130 : 220); },
+            ticks: { font: { size: mobile ? 10 : 11 } }
+          }
         }
       }
     });
