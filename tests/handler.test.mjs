@@ -43,6 +43,8 @@ describe("isBot", () => {
     expect(isBot("Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)")).toBe(true));
   it("returns false for Firefox", () =>
     expect(isBot("Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0")).toBe(false));
+  it("returns true for Chrome-Lighthouse", () =>
+    expect(isBot("Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36 Chrome-Lighthouse")).toBe(true));
   it("returns false for Safari", () =>
     expect(isBot("Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15")).toBe(false));
 });
@@ -61,6 +63,8 @@ describe("isPageRequest", () => {
   it("rejects .png", () => expect(isPageRequest("/logo.png", "GET", "200")).toBe(false));
   it("rejects wp-login", () => expect(isPageRequest("/wp-login.php", "GET", "200")).toBe(false));
   it("rejects .env probe", () => expect(isPageRequest("/.env", "GET", "200")).toBe(false));
+  it("rejects /pagefind/ search queries", () =>
+    expect(isPageRequest("/pagefind/pagefind.js", "GET", "200")).toBe(false));
 });
 
 describe("isFilteredResult", () => {

@@ -24,10 +24,11 @@ const BOT_RES = [
   /chrome\/9[0-4]\.\d+|iphone os [1-9]_/i,
   /Feedbin|FreshRSS|Inoreader|NewsBlur|Reeder|newsboat|rss-parser|sfFeedReader|RSS Guard|Gofeed|KrISS|FeedFetcher/i,
   /Mastodon|Akkoma|Catodon|Iceshrimp|Misskey|Friendica|Flus\/|Palo Alto|VisionHeight|GoogleImageProxy|Yumechi|StefansTools/i,
+  /Chrome-Lighthouse/i,
 ];
 
 const PATH_EXCLUDE_RE =
-  /\.(php|asp|aspx|cgi)$|wp-|xmlrpc|wp-login|\.env|\.git|\/admin|\/login|phpmyadmin/i;
+  /\.(php|asp|aspx|cgi)$|wp-|xmlrpc|wp-login|\.env|\.git|\/admin|\/login|phpmyadmin|\/pagefind\//i;
 
 const ASSET_RE =
   /\.(css|js|png|jpg|jpeg|gif|svg|ico|webp|webm|avif|woff|woff2|ttf|eot|map|xml|json|txt|gz|zip)$/i;
