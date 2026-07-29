@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isBot, isPageRequest, parseTsvLines } from "../src/handler.mjs";
+import { isBot, isPageRequest, isFilteredResult, isTrackedAsset, parseTsvLines } from "../src/handler.mjs";
 
 describe("isBot", () => {
   it("returns true for empty string", () => expect(isBot("")).toBe(true));
@@ -61,6 +61,26 @@ describe("isPageRequest", () => {
   it("rejects .png", () => expect(isPageRequest("/logo.png", "GET", "200")).toBe(false));
   it("rejects wp-login", () => expect(isPageRequest("/wp-login.php", "GET", "200")).toBe(false));
   it("rejects .env probe", () => expect(isPageRequest("/.env", "GET", "200")).toBe(false));
+});
+
+describe("isFilteredResult", () => {
+  it("returns true for Error", () => expect(isFilteredResult("Error")).toBe(true));
+  it("returns true for Filtered", () => expect(isFilteredResult("Filtered")).toBe(true));
+  it("returns false for Hit", () => expect(isFilteredResult("Hit")).toBe(false));
+  it("returns false for Miss", () => expect(isFilteredResult("Miss")).toBe(false));
+});
+
+describe("isTrackedAsset", () => {
+  it("accepts /bootstrap.bundle.min.js GET 200", () =>
+    expect(isTrackedAsset("/bootstrap.bundle.min.js", "GET", "200")).toBe(true));
+  it("accepts /css/main.css GET 200", () =>
+    expect(isTrackedAsset("/css/main.css", "GET", "200")).toBe(true));
+  it("rejects other assets", () =>
+    expect(isTrackedAsset("/js/app.js", "GET", "200")).toBe(false));
+  it("rejects POST", () =>
+    expect(isTrackedAsset("/css/main.css", "POST", "200")).toBe(false));
+  it("rejects error status", () =>
+    expect(isTrackedAsset("/css/main.css", "GET", "404")).toBe(false));
 });
 
 describe("parseTsvLines", () => {

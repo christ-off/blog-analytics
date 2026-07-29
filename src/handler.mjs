@@ -51,6 +51,16 @@ export function isPageRequest(uri, method, status) {
   return true;
 }
 
+export function isFilteredResult(resultType) {
+  return resultType === "Error" || resultType === "Filtered";
+}
+
+export function isTrackedAsset(uri, method, status) {
+  if (method !== "GET") return false;
+  if (!status.startsWith("2") && !status.startsWith("3")) return false;
+  return uri === "/bootstrap.bundle.min.js" || uri === "/css/main.css";
+}
+
 export function parseTsvLines(content) {
   const entries = [];
   let fields = null;
@@ -71,7 +81,7 @@ export function parseTsvLines(content) {
   return entries;
 }
 
-async function processLogFile(key, dailyVisitors, pageViews) {
+async function collectEntries(key) {
   const resp = await s3.send(new GetObjectCommand({ Bucket: LOGS_BUCKET, Key: key }));
   const raw = Buffer.from(await resp.Body.transformToByteArray());
 
@@ -82,6 +92,7 @@ async function processLogFile(key, dailyVisitors, pageViews) {
     content = raw.toString("utf-8");
   }
 
+  const entries = [];
   for (const entry of parseTsvLines(content)) {
     const userAgent = entry["cs(User-Agent)"] ?? "";
     const uri = entry["cs-uri-stem"] ?? "";
@@ -89,15 +100,45 @@ async function processLogFile(key, dailyVisitors, pageViews) {
     const status = entry["sc-status"] ?? "";
     const ip = entry["c-ip"] ?? "";
     const date = entry["date"] ?? "";
+    const resultType = entry["x-edge-result-type"] ?? "";
 
+    if (isFilteredResult(resultType)) continue;
     if (isBot(userAgent)) continue;
-    if (!isPageRequest(uri, method, status)) continue;
     if (!ip || ip === "-") continue;
 
-    if (!dailyVisitors.has(date)) dailyVisitors.set(date, new Set());
-    dailyVisitors.get(date).add(ip);
-    pageViews.set(uri, (pageViews.get(uri) ?? 0) + 1);
+    entries.push({ date, ip, userAgent, uri, method, status });
   }
+  return entries;
+}
+
+function buildSessions(entries) {
+  const sessions = new Map();
+  for (const e of entries) {
+    const sessionKey = `${e.date}|${e.ip}|${e.userAgent}`;
+    let session = sessions.get(sessionKey);
+    if (!session) {
+      session = { sawPage: false, sawAsset: false };
+      sessions.set(sessionKey, session);
+    }
+    if (isPageRequest(e.uri, e.method, e.status) && e.uri.endsWith("/")) session.sawPage = true;
+    if (isTrackedAsset(e.uri, e.method, e.status)) session.sawAsset = true;
+  }
+  return sessions;
+}
+
+function aggregateVisitorsAndPages(entries, sessions) {
+  const dailyVisitors = new Map();
+  const pageViews = new Map();
+  for (const e of entries) {
+    if (!isPageRequest(e.uri, e.method, e.status)) continue;
+    const session = sessions.get(`${e.date}|${e.ip}|${e.userAgent}`);
+    if (!session.sawPage || !session.sawAsset) continue;
+
+    if (!dailyVisitors.has(e.date)) dailyVisitors.set(e.date, new Set());
+    dailyVisitors.get(e.date).add(e.ip);
+    pageViews.set(e.uri, (pageViews.get(e.uri) ?? 0) + 1);
+  }
+  return { dailyVisitors, pageViews };
 }
 
 export async function handler(_event, _context) {
@@ -119,19 +160,23 @@ export async function handler(_event, _context) {
     }
   }
 
-  const dailyVisitors = new Map();
-  const pageViews = new Map();
-
   let filesProcessed = 0;
-  const results = await Promise.allSettled(keys.map(k => processLogFile(k, dailyVisitors, pageViews)));
+  const allEntries = [];
+  const results = await Promise.allSettled(keys.map(k => collectEntries(k)));
   for (let i = 0; i < results.length; i++) {
     if (results[i].status === "fulfilled") {
       filesProcessed++;
+      allEntries.push(...results[i].value);
     } else {
       console.error(`Error processing ${keys[i]}: ${results[i].reason}`);
     }
   }
   console.log(`Processed ${filesProcessed} log files`);
+
+  // Only count a visitor (ip+UA on a given day) once it both viewed a page
+  // and fetched a real static asset — bots that only replay the HTML miss this.
+  const sessions = buildSessions(allEntries);
+  const { dailyVisitors, pageViews } = aggregateVisitorsAndPages(allEntries, sessions);
 
   const allDates = [];
   const d = new Date(startDate);

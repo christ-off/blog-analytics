@@ -26,12 +26,15 @@ const VALID_KEY = `logs/example.${TODAY}-00.gz`;
 
 const LOG_CONTENT = [
   "#Version: 1.0",
-  "#Fields: date\ttime\tc-ip\tcs-method\tcs-uri-stem\tsc-status\tcs(User-Agent)",
-  `${TODAY}\t06:00:00\t1.2.3.4\tGET\t/blog/hello\t200\tMozilla/5.0`,
-  `${TODAY}\t06:01:00\t1.2.3.5\tGET\t/blog/hello\t200\tMozilla/5.0`,
-  `${TODAY}\t06:02:00\t1.2.3.6\tGET\t/about\t200\tMozilla/5.0`,
-  `${TODAY}\t06:03:00\t-\tGET\t/blog/hello\t200\tMozilla/5.0`,
-  `${TODAY}\t06:04:00\t1.2.3.7\tGET\t/blog/hello\t200\tGooglebot/2.1`,
+  "#Fields: date\ttime\tc-ip\tcs-method\tcs-uri-stem\tsc-status\tcs(User-Agent)\tx-edge-result-type",
+  `${TODAY}\t06:00:00\t1.2.3.4\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:00:01\t1.2.3.4\tGET\t/css/main.css\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:01:00\t1.2.3.5\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:01:01\t1.2.3.5\tGET\t/bootstrap.bundle.min.js\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:02:00\t1.2.3.6\tGET\t/about/\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:03:00\t-\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:04:00\t1.2.3.7\tGET\t/blog/hello/\t200\tGooglebot/2.1\tHit`,
+  `${TODAY}\t06:05:00\t1.2.3.8\tGET\t/blog/hello/\t200\tMozilla/5.0\tFiltered`,
 ].join("\n");
 
 const makeGzipBody = content => ({
@@ -63,9 +66,9 @@ describe("handler", () => {
     expect(result.statusCode).toBe(200);
     const body = JSON.parse(result.body);
     expect(body.filesProcessed).toBe(1);
-    expect(body.totalUniqueVisitors).toBe(3);
-    expect(body.totalPagesTracked).toBe(2);
-    expect(body.topPage).toEqual(["/blog/hello", 2]);
+    expect(body.totalUniqueVisitors).toBe(2);
+    expect(body.totalPagesTracked).toBe(1);
+    expect(body.topPage).toEqual(["/blog/hello/", 2]);
   });
 
   it("falls back to raw text when gunzip fails", async () => {
