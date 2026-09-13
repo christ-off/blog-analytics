@@ -59,7 +59,7 @@ export function isFilteredResult(resultType) {
 export function isTrackedAsset(uri, method, status) {
   if (method !== "GET") return false;
   if (!status.startsWith("2") && !status.startsWith("3")) return false;
-  return uri === "/bootstrap.bundle.min.js" || uri === "/css/main.css";
+  return uri === "/css/main.css" || uri === "/assets/svgs/ecrit-par-un-humain.svg";
 }
 
 export function parseTsvLines(content) {

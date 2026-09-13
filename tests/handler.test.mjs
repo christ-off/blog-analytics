@@ -75,10 +75,10 @@ describe("isFilteredResult", () => {
 });
 
 describe("isTrackedAsset", () => {
-  it("accepts /bootstrap.bundle.min.js GET 200", () =>
-    expect(isTrackedAsset("/bootstrap.bundle.min.js", "GET", "200")).toBe(true));
   it("accepts /css/main.css GET 200", () =>
     expect(isTrackedAsset("/css/main.css", "GET", "200")).toBe(true));
+  it("accepts /assets/svgs/ecrit-par-un-humain.svg GET 200", () =>
+    expect(isTrackedAsset("/assets/svgs/ecrit-par-un-humain.svg", "GET", "200")).toBe(true));
   it("rejects other assets", () =>
     expect(isTrackedAsset("/js/app.js", "GET", "200")).toBe(false));
   it("rejects POST", () =>

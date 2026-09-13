@@ -30,7 +30,7 @@ const LOG_CONTENT = [
   `${TODAY}\t06:00:00\t1.2.3.4\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:00:01\t1.2.3.4\tGET\t/css/main.css\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:01:00\t1.2.3.5\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
-  `${TODAY}\t06:01:01\t1.2.3.5\tGET\t/bootstrap.bundle.min.js\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:01:01\t1.2.3.5\tGET\t/assets/svgs/ecrit-par-un-humain.svg\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:02:00\t1.2.3.6\tGET\t/about/\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:03:00\t-\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:04:00\t1.2.3.7\tGET\t/blog/hello/\t200\tGooglebot/2.1\tHit`,
