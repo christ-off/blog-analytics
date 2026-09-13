@@ -37,6 +37,8 @@ const DATE_IN_KEY_RE = /\.(\d{4}-\d{2}-\d{2})-\d{2}\./;
 
 const NON_VISIT_PATHS = new Set(["/", "/feed.xml", "/rss.xml"]);
 
+const TRACKED_ASSET_PATHS = new Set(["/css/main.css", "/assets/svgs/ecrit-par-un-humain.svg"]);
+
 export function isBot(userAgent) {
   if (!userAgent || userAgent === "-") return true;
   const ua = decodeURIComponent(userAgent);
@@ -59,7 +61,7 @@ export function isFilteredResult(resultType) {
 export function isTrackedAsset(uri, method, status) {
   if (method !== "GET") return false;
   if (!status.startsWith("2") && !status.startsWith("3")) return false;
-  return uri === "/css/main.css" || uri === "/assets/svgs/ecrit-par-un-humain.svg";
+  return TRACKED_ASSET_PATHS.has(uri);
 }
 
 export function parseTsvLines(content) {
