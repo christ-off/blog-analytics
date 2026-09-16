@@ -12,6 +12,7 @@ const DISTRIBUTION_ID = process.env.DISTRIBUTION_ID;
 const OUTPUT_PREFIX = "about/data";
 const DAYS = 30;
 const TOP_PAGES = 15;
+const EVIDENCE_WINDOW_MS = 60 * 60 * 1000; // ±1 hour
 
 const BOT_RES = [
   /bot|crawl|spider|feedly|feeder|slurp|semrush|ahrefs|python|curl|wget|okhttp|Go-http|HeadlessChrome|Googlebot|bingbot/i,
@@ -37,7 +38,9 @@ const DATE_IN_KEY_RE = /\.(\d{4}-\d{2}-\d{2})-\d{2}\./;
 
 const NON_VISIT_PATHS = new Set(["/", "/feed.xml", "/rss.xml"]);
 
-const TRACKED_ASSET_PATHS = new Set(["/css/main.css", "/assets/svgs/ecrit-par-un-humain.svg"]);
+const CSS_ASSET_PATH = "/css/main.css";
+const EVIDENCE_ASSET_PATH = "/assets/svgs/ecrit-par-un-humain.svg";
+const TRACKED_ASSET_PATHS = new Set([CSS_ASSET_PATH, EVIDENCE_ASSET_PATH]);
 
 export function isBot(userAgent) {
   if (!userAgent || userAgent === "-") return true;
@@ -48,6 +51,7 @@ export function isBot(userAgent) {
 export function isPageRequest(uri, method, status) {
   if (method !== "GET") return false;
   if (!status.startsWith("2") && !status.startsWith("3")) return false;
+  if (!uri.endsWith("/")) return false;
   if (NON_VISIT_PATHS.has(uri)) return false;
   if (PATH_EXCLUDE_RE.test(uri)) return false;
   if (ASSET_RE.test(uri)) return false;
@@ -103,39 +107,55 @@ async function collectEntries(key) {
     const status = entry["sc-status"] ?? "";
     const ip = entry["c-ip"] ?? "";
     const date = entry["date"] ?? "";
+    const time = entry["time"] ?? "";
     const resultType = entry["x-edge-result-type"] ?? "";
 
     if (isFilteredResult(resultType)) continue;
     if (isBot(userAgent)) continue;
     if (!ip || ip === "-") continue;
 
-    entries.push({ date, ip, userAgent, uri, method, status });
+    entries.push({ date, ip, userAgent, uri, method, status, timestamp: parseTimestamp(date, time) });
   }
   return entries;
 }
 
-function buildSessions(entries) {
-  const sessions = new Map();
-  for (const e of entries) {
-    const sessionKey = `${e.date}|${e.ip}|${e.userAgent}`;
-    let session = sessions.get(sessionKey);
-    if (!session) {
-      session = { sawPage: false, sawAsset: false };
-      sessions.set(sessionKey, session);
-    }
-    if (isPageRequest(e.uri, e.method, e.status) && e.uri.endsWith("/")) session.sawPage = true;
-    if (isTrackedAsset(e.uri, e.method, e.status)) session.sawAsset = true;
-  }
-  return sessions;
+export function parseTimestamp(date, time) {
+  return Date.parse(`${date}T${time}Z`);
 }
 
-function aggregateVisitorsAndPages(entries, sessions) {
+export function hasTimestampWithin(timestamps, target, windowMs) {
+  return timestamps.some(ts => Math.abs(ts - target) <= windowMs);
+}
+
+function visitorKey(e) {
+  return `${e.ip}|${e.userAgent}`;
+}
+
+function buildAssetTimestamps(entries) {
+  const groups = new Map();
+  for (const e of entries) {
+    if (!isTrackedAsset(e.uri, e.method, e.status)) continue;
+    const key = visitorKey(e);
+    let group = groups.get(key);
+    if (!group) {
+      group = { css: [], evidence: [] };
+      groups.set(key, group);
+    }
+    if (e.uri === CSS_ASSET_PATH) group.css.push(e.timestamp);
+    if (e.uri === EVIDENCE_ASSET_PATH) group.evidence.push(e.timestamp);
+  }
+  return groups;
+}
+
+function aggregateVisitorsAndPages(entries, assetGroups) {
   const dailyVisitors = new Map();
   const pageViews = new Map();
   for (const e of entries) {
     if (!isPageRequest(e.uri, e.method, e.status)) continue;
-    const session = sessions.get(`${e.date}|${e.ip}|${e.userAgent}`);
-    if (!session.sawPage || !session.sawAsset) continue;
+    const group = assetGroups.get(visitorKey(e));
+    if (!group) continue;
+    if (!hasTimestampWithin(group.css, e.timestamp, EVIDENCE_WINDOW_MS)) continue;
+    if (!hasTimestampWithin(group.evidence, e.timestamp, EVIDENCE_WINDOW_MS)) continue;
 
     if (!dailyVisitors.has(e.date)) dailyVisitors.set(e.date, new Set());
     dailyVisitors.get(e.date).add(e.ip);
@@ -176,10 +196,11 @@ export async function handler(_event, _context) {
   }
   console.log(`Processed ${filesProcessed} log files`);
 
-  // Only count a visitor (ip+UA on a given day) once it both viewed a page
-  // and fetched a real static asset — bots that only replay the HTML miss this.
-  const sessions = buildSessions(allEntries);
-  const { dailyVisitors, pageViews } = aggregateVisitorsAndPages(allEntries, sessions);
+  // Only count a page view (by ip+UA) when both the CSS and the evidence
+  // asset were also fetched within ±1 hour of it — a single hotlinked asset,
+  // or an unrelated visit hours apart from the same ip+UA, isn't enough.
+  const assetGroups = buildAssetTimestamps(allEntries);
+  const { dailyVisitors, pageViews } = aggregateVisitorsAndPages(allEntries, assetGroups);
 
   const allDates = [];
   const d = new Date(startDate);

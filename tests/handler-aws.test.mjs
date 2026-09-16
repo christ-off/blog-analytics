@@ -29,12 +29,23 @@ const LOG_CONTENT = [
   "#Fields: date\ttime\tc-ip\tcs-method\tcs-uri-stem\tsc-status\tcs(User-Agent)\tx-edge-result-type",
   `${TODAY}\t06:00:00\t1.2.3.4\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:00:01\t1.2.3.4\tGET\t/css/main.css\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:00:02\t1.2.3.4\tGET\t/assets/svgs/ecrit-par-un-humain.svg\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:01:00\t1.2.3.5\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
-  `${TODAY}\t06:01:01\t1.2.3.5\tGET\t/assets/svgs/ecrit-par-un-humain.svg\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:01:01\t1.2.3.5\tGET\t/css/main.css\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:01:02\t1.2.3.5\tGET\t/assets/svgs/ecrit-par-un-humain.svg\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:02:00\t1.2.3.6\tGET\t/about/\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:02:01\t1.2.3.6\tGET\t/css/main.css\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:03:00\t-\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:04:00\t1.2.3.7\tGET\t/blog/hello/\t200\tGooglebot/2.1\tHit`,
   `${TODAY}\t06:05:00\t1.2.3.8\tGET\t/blog/hello/\t200\tMozilla/5.0\tFiltered`,
+  // evidence asset arrives 2h10m after the page view — outside the ±1h window, must not count
+  `${TODAY}\t06:10:00\t1.2.3.9\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:10:01\t1.2.3.9\tGET\t/css/main.css\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t08:20:00\t1.2.3.9\tGET\t/assets/svgs/ecrit-par-un-humain.svg\t200\tMozilla/5.0\tHit`,
+  // both assets arrive within an hour of the page view but well after it — must count
+  `${TODAY}\t05:15:00\t1.2.3.10\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:10:00\t1.2.3.10\tGET\t/css/main.css\t200\tMozilla/5.0\tHit`,
+  `${TODAY}\t06:14:00\t1.2.3.10\tGET\t/assets/svgs/ecrit-par-un-humain.svg\t200\tMozilla/5.0\tHit`,
 ].join("\n");
 
 const makeGzipBody = content => ({
@@ -66,9 +77,9 @@ describe("handler", () => {
     expect(result.statusCode).toBe(200);
     const body = JSON.parse(result.body);
     expect(body.filesProcessed).toBe(1);
-    expect(body.totalUniqueVisitors).toBe(2);
+    expect(body.totalUniqueVisitors).toBe(3);
     expect(body.totalPagesTracked).toBe(1);
-    expect(body.topPage).toEqual(["/blog/hello/", 2]);
+    expect(body.topPage).toEqual(["/blog/hello/", 3]);
   });
 
   it("falls back to raw text when gunzip fails", async () => {

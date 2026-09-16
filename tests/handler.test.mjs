@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { isBot, isPageRequest, isFilteredResult, isTrackedAsset, parseTsvLines } from "../src/handler.mjs";
+import {
+  isBot,
+  isPageRequest,
+  isFilteredResult,
+  isTrackedAsset,
+  parseTsvLines,
+  parseTimestamp,
+  hasTimestampWithin,
+} from "../src/handler.mjs";
 
 describe("isBot", () => {
   it("returns true for empty string", () => expect(isBot("")).toBe(true));
@@ -50,12 +58,14 @@ describe("isBot", () => {
 });
 
 describe("isPageRequest", () => {
-  it("accepts normal page GET 200", () => expect(isPageRequest("/blog/post", "GET", "200")).toBe(true));
-  it("accepts 301 redirect", () => expect(isPageRequest("/blog/post", "GET", "301")).toBe(true));
-  it("rejects POST", () => expect(isPageRequest("/blog/post", "POST", "200")).toBe(false));
-  it("rejects 404", () => expect(isPageRequest("/blog/post", "GET", "404")).toBe(false));
-  it("rejects 500", () => expect(isPageRequest("/blog/post", "GET", "500")).toBe(false));
+  it("accepts normal page GET 200", () => expect(isPageRequest("/blog/post/", "GET", "200")).toBe(true));
+  it("accepts 301 redirect", () => expect(isPageRequest("/blog/post/", "GET", "301")).toBe(true));
+  it("rejects POST", () => expect(isPageRequest("/blog/post/", "POST", "200")).toBe(false));
+  it("rejects 404", () => expect(isPageRequest("/blog/post/", "GET", "404")).toBe(false));
+  it("rejects 500", () => expect(isPageRequest("/blog/post/", "GET", "500")).toBe(false));
   it("rejects root /", () => expect(isPageRequest("/", "GET", "200")).toBe(false));
+  it("rejects a path without a trailing slash", () =>
+    expect(isPageRequest("/blog/post", "GET", "200")).toBe(false));
   it("rejects /feed.xml", () => expect(isPageRequest("/feed.xml", "GET", "200")).toBe(false));
   it("rejects /rss.xml", () => expect(isPageRequest("/rss.xml", "GET", "200")).toBe(false));
   it("rejects .css", () => expect(isPageRequest("/style.css", "GET", "200")).toBe(false));
@@ -85,6 +95,39 @@ describe("isTrackedAsset", () => {
     expect(isTrackedAsset("/css/main.css", "POST", "200")).toBe(false));
   it("rejects error status", () =>
     expect(isTrackedAsset("/css/main.css", "GET", "404")).toBe(false));
+});
+
+describe("parseTimestamp", () => {
+  it("parses a date and time into epoch ms", () => {
+    expect(parseTimestamp("2026-04-24", "06:00:00")).toBe(Date.parse("2026-04-24T06:00:00Z"));
+  });
+});
+
+describe("hasTimestampWithin", () => {
+  const WINDOW_MS = 60 * 60 * 1000;
+  const t = s => Date.parse(`2026-04-24T${s}Z`);
+
+  it("returns true for an exact match", () => {
+    expect(hasTimestampWithin([t("06:00:00")], t("06:00:00"), WINDOW_MS)).toBe(true);
+  });
+  it("returns true for a timestamp just inside the window", () => {
+    expect(hasTimestampWithin([t("06:59:59")], t("06:00:00"), WINDOW_MS)).toBe(true);
+    expect(hasTimestampWithin([t("05:00:01")], t("06:00:00"), WINDOW_MS)).toBe(true);
+  });
+  it("returns false for a timestamp outside the window", () => {
+    expect(hasTimestampWithin([t("07:00:01")], t("06:00:00"), WINDOW_MS)).toBe(false);
+    expect(hasTimestampWithin([t("04:59:59")], t("06:00:00"), WINDOW_MS)).toBe(false);
+  });
+  it("returns false for an empty array", () => {
+    expect(hasTimestampWithin([], t("06:00:00"), WINDOW_MS)).toBe(false);
+  });
+  it("finds a match among several timestamps", () => {
+    const timestamps = [t("01:00:00"), t("06:30:00"), t("12:00:00")];
+    expect(hasTimestampWithin(timestamps, t("06:00:00"), WINDOW_MS)).toBe(true);
+  });
+  it("crosses a day boundary correctly", () => {
+    expect(hasTimestampWithin([Date.parse("2026-04-25T00:05:00Z")], t("23:59:00"), WINDOW_MS)).toBe(true);
+  });
 });
 
 describe("parseTsvLines", () => {
