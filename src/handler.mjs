@@ -223,16 +223,17 @@ export async function handler(_event, _context) {
     values: sorted.map(p => p[1]),
   };
 
-  for (const { name, data } of [{ name: "visitors.json", data: visitorsJson }, { name: "pages.json", data: pagesJson }]) {
-    await s3.send(new PutObjectCommand({
-      Bucket: WEBSITE_BUCKET,
-      Key: `${OUTPUT_PREFIX}/${name}`,
-      Body: JSON.stringify(data),
-      ContentType: "application/json",
-      CacheControl: "max-age=86400",
-      ACL: "public-read",
-    }));
-  }
+  await Promise.all([
+    { name: "visitors.json", data: visitorsJson },
+    { name: "pages.json", data: pagesJson },
+  ].map(({ name, data }) => s3.send(new PutObjectCommand({
+    Bucket: WEBSITE_BUCKET,
+    Key: `${OUTPUT_PREFIX}/${name}`,
+    Body: JSON.stringify(data),
+    ContentType: "application/json",
+    CacheControl: "max-age=86400",
+    ACL: "public-read",
+  }))));
 
   await cf.send(new CreateInvalidationCommand({
     DistributionId: DISTRIBUTION_ID,
