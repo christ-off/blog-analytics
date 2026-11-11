@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-AWS SAM application — a Python Lambda that runs daily, reads 30 days of CloudFront `.gz` logs from S3, and writes `visitors.json` + `pages.json` to a static website S3 bucket. EventBridge triggers it at 06:00 UTC.
+AWS SAM application — a Node.js 22 Lambda that runs daily, reads 30 days of CloudFront `.gz` logs from S3, and writes `visitors.json` + `pages.json` to a static website S3 bucket. EventBridge triggers it at 06:00 UTC.
 
 ## Commands
 
