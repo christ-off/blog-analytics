@@ -7,7 +7,7 @@ Description: >
 Parameters:
   LogsBucket:
     Type: String
-    Description: S3 bucket containing CloudFront JSON logs
+    Description: S3 bucket containing CloudFront standard logs (w3c, tab-separated)
   LogsPrefix:
     Type: String
     Default: ''

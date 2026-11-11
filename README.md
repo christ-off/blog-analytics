@@ -1,6 +1,6 @@
 # Blog Analytics (SAM)
 
-Generates daily visitor and top pages charts from CloudFront JSON logs.  
+Generates daily visitor and top pages charts from CloudFront standard logs (w3c, tab-separated).  
 Outputs JSON files to your static site S3 bucket, rendered by Chart.js on your about page.
 
 [![CodeQL](https://github.com/christ-off/blog-analytics/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/christ-off/blog-analytics/actions/workflows/github-code-scanning/codeql) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=christ-off_blog-analytics&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=christ-off_blog-analytics) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=christ-off_blog-analytics&metric=coverage)](https://sonarcloud.io/summary/new_code?id=christ-off_blog-analytics)
