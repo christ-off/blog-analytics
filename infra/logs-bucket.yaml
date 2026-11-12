@@ -14,11 +14,11 @@ Parameters:
     Description: CloudFront distribution ID allowed to deliver logs
   LogRetentionDays:
     Type: Number
-    Default: 31
+    Default: 90
     MinValue: 1
     Description: >
       Days before log objects expire. Keep it above the 30-day window
-      read by the analytics function.
+      read by the analytics function; analyze-logs can read up to 90 days.
 
 Resources:
   Bucket:
