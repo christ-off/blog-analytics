@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  S3 bucket receiving the CloudFront standard logs (w3c), with its retention
+  rule and the bucket policy that lets CloudFront log delivery write to it.
+  Must be deployed in the bucket's region (eu-west-3). Adopted from the
+  console-created bucket with a CloudFormation import, see import-logs-bucket.sh.
+
+Parameters:
+  LogsBucket:
+    Type: String
+    Description: Name of the existing logs bucket
+  DistributionId:
+    Type: String
+    Description: CloudFront distribution ID allowed to deliver logs
+  LogRetentionDays:
+    Type: Number
+    Default: 31
+    MinValue: 1
+    Description: >
+      Days before log objects expire. Keep it above the 30-day window
+      read by the analytics function.
+
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref LogsBucket
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        TransitionDefaultMinimumObjectSize: all_storage_classes_128K
+        Rules:
+          - Id: !Sub 'delete-after-${LogRetentionDays}-days'
+            Status: Enabled
+            Prefix: ''
+            ExpirationInDays: !Ref LogRetentionDays
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Id: AWSLogDeliveryWrite20150319
+        Statement:
+          - Sid: AWSLogDeliveryWrite1
+            Effect: Allow
+            Principal:
+              Service: delivery.logs.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub 'arn:aws:s3:::${LogsBucket}/AWSLogs/${AWS::AccountId}/CloudFront/*'
+            Condition:
+              StringEquals:
+                'aws:SourceAccount': !Ref AWS::AccountId
+                's3:x-amz-acl': bucket-owner-full-control
+              ArnLike:
+                'aws:SourceArn': !Sub 'arn:aws:logs:us-east-1:${AWS::AccountId}:delivery-source:CreatedByCloudFront-${DistributionId}'
