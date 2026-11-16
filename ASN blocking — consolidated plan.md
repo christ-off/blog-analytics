@@ -6,30 +6,39 @@ Condensed from the guidance document, the organization proposal and the status d
 
 Block scrapers from hosting/datacenter ASNs on the static blog (S3 + CloudFront), without hurting real readers or useful crawlers.
 
+> **Revision Nov 16, 2026 — scope of the `blog-analytics` job.** The job's role is now: (1) produce the **daily analytics** (existing), and (2) **populate a CloudFront KeyValueStore with the full ASN list and each ASN's category** (`isp`, `hosting`, `business`, `education_research`, `government_admin`, none). It does **not** classify observed ASNs, propose block lists or decide anything. The blocking policy (what to do per category) is deferred and lives in the function, not in the job. Phases marked *deferred* below are kept for reference only and are superseded by this revision.
+
 **Pipeline (decided):**
 
-1. CloudFront standard logs (v2, w3c) now carry the `asn` column.
-2. A daily job in `blog-analytics` (second SAM function) reads the logs and classifies observed ASNs with public lists.
-3. It writes a **proposed list to S3 for human review** (not directly to the KVS at first).
-4. Approved ASNs go into a CloudFront **KeyValueStore (KVS)**, which the existing CloudFront Function reads in addition to its static regex.
-5. `analyze-logs` shows the effect (blocked ASNs, before/after).
+1. CloudFront standard logs (v2, w3c) carry the `asn` column.
+2. A daily job in `blog-analytics` (second SAM function) syncs the **full ASN → category list** into a CloudFront **KeyValueStore (KVS)**: the whole public list (≈121k ASNs, quantcdn `asn-info` category), not only observed ASNs.
+3. *Deferred:* the CloudFront Function reads the category with one `kvs.get(asn)` per request and applies the policy.
+4. *Deferred:* `analyze-logs` shows the effect and a page of allowlist candidates.
+
+**KVS content and size**
+
+- Key = ASN number (string), value = short category code (e.g. `i`, `h`, `b`, `e`, `g`; no value if uncategorised). About 121,050 entries ≈ 780 KB of key + value bytes against the 5 MB store limit (measured on `analyze-logs/logs.db` `asn_info`; real size slightly higher with overhead).
+- Overrides (always allow / always block an ASN) are extra values on the same key, kept out of the daily sync's overwrite scope.
+- Daily sync = diff the source list against the store and send only changes (UpdateKeys is batched, max 50 operations per call, so the first load takes ~2,500 calls and later runs a handful). Unverified details are under open points.
+
+**Policy direction (deferred, not implemented, for later phases):** `isp` allowed by default except Chinese ISPs (by country or ASN); `hosting` blocked by default; `business` and unknown to be decided; a short **user-agent whitelist** (Mastodon, Misskey, Feedly, Feedbin, Bingbot, Qwantbot, Applebot, Miniflux, Reeder, …, matched on the name token only, verified by ASN where the bot has published ranges); **`feed.xml` always allowed**; ASN allowlist for good hosted software. Fail open if the KVS read fails.
 
 **Rules that govern the design:**
 
-- Block an ASN only if at least one source says *hosting* **and** none says *Cable/DSL/ISP*. Hosting-only must be verified by hand (`AGENTS.md` of the function project).
-- The allowlist wins: `allowedHostedSoftwareRegex` (Googlebot AS15169, Bingbot AS8075, Applebot AS714, Qwantbot AS199064, Feedly AS60653).
 - Fail open: if the KVS read fails, let the request through.
-- Start with the public lists (C) for classification only. Behaviour scoring (D: non-human ratio, `lastSeen` expiry after ~30 days) comes later.
+- The allowlist wins over any category.
+- Hosting-only verification by hand still applies to any ASN added to a manual block list (`AGENTS.md` of the function project).
 
 **Decisions made:**
 
 | Topic | Decision |
 |---|---|
 | Where the job lives | `blog-analytics`, second function (no new repo) |
+| Job responsibilities | Daily analytics + full ASN → category sync to the KVS. No classification, no proposals |
 | Tooling | SAM / CloudFormation; the distribution itself is not imported |
-| Blocking mechanism | KVS (option A) read by the existing function; WAF (B) stays a fallback |
-| Detection | Public hosting lists first (C), behaviour scoring (D) later |
-| Rollout | Proposed list for review first, then automatic |
+| Blocking mechanism | KVS read by the existing function; WAF stays a fallback |
+| Category source | quantcdn `asn-info` (same data as `asn_info` in `analyze-logs`) |
+| Policy and rollout | Deferred (see policy direction above) |
 
 **Why a KVS:** `function.js` is ~8 KB against a hard 10 KB limit and `blockedAsnRegex` already holds ~60 ASNs. KVS limits: 5 MB, key ≤ 512 B, value ≤ 1 KB; 2M reads/month free, then $0.03/M. The function needs the `CloudFront-Viewer-ASN` header via an origin request policy (not the cache policy, so no effect on cache hits).
 
@@ -59,7 +68,26 @@ Block scrapers from hosting/datacenter ASNs on the static blog (S3 + CloudFront)
 
 Each phase ends with a checkpoint; do not start the next until its validation passes.
 
-### Phase A — Finish the offline classification (step 3)
+**Active scope (Nov 16 revision): Phase B, then Phase K (below), then the KVS creation and write permissions of Phase D. Phases A, C, E and the function part of D are deferred.**
+
+### Phase K — Full ASN → category sync to the KVS (new)
+
+- [ ] Choose the source and its refresh: quantcdn `asn-info` published data (fetched by the job, or a pinned copy updated on a schedule). Fall back to the previous KVS content if the download fails.
+- [ ] Define the category code mapping and the override convention (so the daily sync never erases manual overrides).
+- [ ] Create the KVS in the SAM template; grant the ASN job write access only to this store.
+- [ ] Implement the sync: list store keys, diff, apply in batches of ≤ 50 (and the payload limit), idempotent and re-runnable.
+- [ ] Guardrails: abort without writing if the source has far fewer entries than the store (e.g. < 90%) or is empty; log counts of added/changed/removed.
+- [ ] Schedule it daily via EventBridge, after the analytics run.
+
+**Validation:**
+
+- Unit tests: diff computation, batching, guardrail abort, overrides preserved.
+- First load into the real store completes; `describe-key-value-store` shows ≈121k keys and a size well below 5 MB.
+- Spot-check by `get-key`: a hosting ASN (24940), an ISP ASN, a business ASN (60653), an unknown ASN.
+- Second run the next day writes only the changes (near-zero in the normal case).
+- IAM check: the sync role cannot write to the website bucket; the analytics role cannot write to the KVS.
+
+### Phase A — Finish the offline classification (step 3) — *deferred*
 
 - [ ] Wait for several full days of logs with `asn` (at least 5–7 days, covering a weekend).
 - [ ] Re-run `scripts/asn-exploration/` on the full sample.
@@ -87,7 +115,7 @@ Each phase ends with a checkpoint; do not start the next until its validation pa
 - Manual invoke of the analytics function: same output (`visitors.json`, `pages.json`) as before the refactor (diff the files).
 - IAM check: the ASN role cannot write to the website bucket.
 
-### Phase C — ASN job in dry-run mode (step 5)
+### Phase C — ASN job in dry-run mode (step 5) — *deferred, superseded by Phase K and the policy in the function*
 
 - [ ] Implement classification (quantcdn, brianhama, PeeringDB veto, X4BNet by IP) in `src/asn-job/`.
 - [ ] Apply the block rule and the allowlist; also consume the static `blockedAsnRegex` so already-blocked ASNs are not proposed again.
@@ -100,7 +128,7 @@ Each phase ends with a checkpoint; do not start the next until its validation pa
 - Run against real logs for several days; a human reviews each proposed list and flags false positives. Target: zero false positives in the reviewed window.
 - Confirm the output is not publicly readable.
 
-### Phase D — KVS and function (step 6)
+### Phase D — KVS and function (step 6) — *KVS creation and write path are active (see Phase K); the function change is deferred*
 
 - [ ] Verify whether Node KVS writes need `@aws-sdk/signature-v4-crt` (SigV4a). If yes, accept the end of "no production dependencies" or isolate it in the ASN function only.
 - [ ] Create the KVS in the SAM template; expose its ARN.
@@ -119,7 +147,7 @@ Each phase ends with a checkpoint; do not start the next until its validation pa
 - Log-only phase: for several days, compare would-be blocks with the reviewed list; no allowlisted crawler or known reader affected (check Googlebot/Bingbot verification by UA + reverse DNS).
 - After enforcing: watch `analyze-logs` for blocked requests turning into Filtered/Error; roll back by removing the keys (or setting the function back to the previous version).
 
-### Phase E — Measure and iterate (step 7)
+### Phase E — Measure and iterate (step 7) — *deferred*
 
 - [ ] Before/after comparison for a blocked ASN (e.g. AS138915): its traffic becomes Filtered/Error in `analyze-logs`.
 - [ ] Review weekly for the first month; add expiry (`lastSeen`, ~30 days) and consider behaviour scoring (D) once the list-based approach is stable.
@@ -142,7 +170,10 @@ Each phase ends with a checkpoint; do not start the next until its validation pa
 | Item | Status |
 |---|---|
 | WAF ASN-match: max ASNs per rule, Free-plan eligibility | Unverified; only matters if falling back to option B |
-| KVS write needs SigV4a dependency? | Unverified (Phase D) |
+| KVS write needs SigV4a dependency? | Unverified (Phase D / K) |
+| KVS bulk-write mechanics (UpdateKeys 50 ops per call and payload limit; import-from-S3 only at store creation?; update rate limits) | Unverified; decides how the first 121k-key load is done (Phase K) |
+| ASN category source: licence, update cadence, behaviour when the download fails | To check (Phase K) |
+| Policy per category (`business`, unknown, browsers on hosting, Chinese ISPs), UA whitelist, `feed.xml` exemption | Deferred; direction recorded in section 1 |
 | Merge rules (manual regex / allowlist / KVS) | Allowlist wins; rest to define (Phase D) |
 | Response code for KVS matches | 403 (guidance) vs 404 (current function) |
 | Requests with no ASN | Not investigated (Phase A) |
@@ -161,3 +192,14 @@ Each phase ends with a checkpoint; do not start the next until its validation pa
 - Logs bucket `post-tenebras-lire-access-logs`, prefix `AWSLogs/<account>/CloudFront/`, w3c format, 90-day retention.
 - Classification sources: [X4BNet/lists_vpn](https://github.com/X4BNet/lists_vpn), [brianhama/bad-asn-list](https://github.com/brianhama/bad-asn-list), [PeeringDB](https://docs.peeringdb.com/blog/network_type_what_why_how/), [quantcdn/asn-info](https://gh.r-mj.com/quantcdn/asn-info).
 - AWS: [CloudFront headers](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/adding-cloudfront-headers.html), [KeyValueStore](https://aws.amazon.com/blogs/aws/introducing-amazon-cloudfront-keyvaluestore-a-low-latency-datastore-for-cloudfront-functions), [WAF ASN match](https://docs.aws.amazon.com/waf/latest/developerguide/waf-rule-statement-type-asn-match.html), [flat-rate plans](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/flat-rate-pricing-plan.html).
+
+## 6. ASN to always block
+
+Some ASN are described as ISP. But the incoming traffic prooves that they are an hosting platform
+They should be always blocked
+
+AS4134 	China Telecom 	isp 	
+AS4837 	CHINA UNICOM China169 Backbone 	isp 	
+
+AS396982 - Google LLC - hosting
+AS15169 - Google LLC - hosting
