@@ -34,9 +34,11 @@ aws lambda invoke \
 
 ## Architecture
 
-- `src/handler.mjs` — single Lambda entry point (`handler(event, context)`); pure functions (`isBot`, `isPageRequest`, `parseTsvLines`) are exported for testing
-- `tests/handler.test.mjs` — Vitest unit tests
-- `package.json` — dev dependencies only (Vitest + AWS SDK for local testing); not included in Lambda package (`CodeUri: src/`)
+- `src/analytics/handler.mjs` — analytics Lambda entry point (`handler(event, context)`); pure functions (`isBot`, `isPageRequest`, …) are exported for testing
+- `src/asn-job/handler.mjs` — ASN job Lambda (placeholder until Phase K of the plan: sync the full ASN → category list into the CloudFront KeyValueStore)
+- `src/shared/log-parser.mjs` — CloudFront log decoding and TSV parsing, used by both functions
+- `tests/` — Vitest unit tests, one folder per `src/` folder
+- `package.json` — dev dependencies only (Vitest + AWS SDK for local testing); not included in Lambda package (`CodeUri: src/` for both functions, selected by `Handler: analytics/handler.handler` / `asn-job/handler.handler`)
 - `template.yaml` — SAM template; defines the function, IAM policies, schedule, and parameters
 - `chart-snippet.html` — client-side Chart.js snippet to embed in the Jekyll `about.md` page
 

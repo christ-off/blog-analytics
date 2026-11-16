@@ -19,7 +19,7 @@ vi.mock("@aws-sdk/client-cloudfront", () => ({
   CreateInvalidationCommand: vi.fn(function (x) { return x; }),
 }));
 
-import { handler } from "../src/handler.mjs";
+import { handler } from "../../src/analytics/handler.mjs";
 
 const TODAY = new Date().toISOString().slice(0, 10);
 const VALID_KEY = `logs/example.${TODAY}-00.gz`;

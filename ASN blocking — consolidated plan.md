@@ -104,9 +104,9 @@ Each phase ends with a checkpoint; do not start the next until its validation pa
 
 ### Phase B — Restructure `blog-analytics` (step 4)
 
-- [ ] Split `CodeUri` into `src/analytics/`, `src/asn-job/`, `src/shared/` (log parser, with tests).
-- [ ] Two functions, separate IAM roles: analytics keeps the website-bucket and invalidation rights; the ASN job gets log read and (later) KVS write only.
-- [ ] Keep the stack name `daily-statistics`.
+- [x] Split `src/` into `src/analytics/`, `src/asn-job/` (placeholder), `src/shared/` (log parser, with tests). Both functions keep `CodeUri: src/` and differ by `Handler`.
+- [x] Two functions, separate IAM roles (verified Nov 16: ASN role has only `AWSLambdaBasicExecutionRole`): analytics keeps the website-bucket and invalidation rights; the ASN job gets log read and (later) KVS write only.
+- [x] Keep the stack name `daily-statistics`.
 
 **Validation:**
 
