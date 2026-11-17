@@ -1,6 +1,6 @@
 import { S3Client, GetObjectCommand, PutObjectCommand, paginateListObjectsV2 } from "@aws-sdk/client-s3";
 import { CloudFrontClient, CreateInvalidationCommand } from "@aws-sdk/client-cloudfront";
-import { decodeLogBuffer, parseTsvLines } from "../shared/log-parser.mjs";
+import { gunzipSync } from "node:zlib";
 
 const s3 = new S3Client({});
 const cf = new CloudFrontClient({});
@@ -68,12 +68,39 @@ export function isTrackedAsset(uri, method, status) {
   return TRACKED_ASSET_PATHS.has(uri);
 }
 
+export function parseTsvLines(content) {
+  const entries = [];
+  let fields = null;
+  for (const line of content.split("\n")) {
+    if (!line) continue;
+    if (line.startsWith("#Fields:")) {
+      fields = line.slice(8).trim().split("\t");
+      continue;
+    }
+    if (line.startsWith("#")) continue;
+    if (!fields) continue;
+    const parts = line.split("\t");
+    if (parts.length !== fields.length) continue;
+    const obj = {};
+    for (let i = 0; i < fields.length; i++) obj[fields[i]] = parts[i];
+    entries.push(obj);
+  }
+  return entries;
+}
+
 async function collectEntries(key) {
   const resp = await s3.send(new GetObjectCommand({ Bucket: LOGS_BUCKET, Key: key }));
   const raw = Buffer.from(await resp.Body.transformToByteArray());
 
+  let content;
+  try {
+    content = gunzipSync(raw).toString("utf-8");
+  } catch {
+    content = raw.toString("utf-8");
+  }
+
   const entries = [];
-  for (const entry of parseTsvLines(decodeLogBuffer(raw))) {
+  for (const entry of parseTsvLines(content)) {
     const userAgent = entry["cs(User-Agent)"] ?? "";
     const uri = entry["cs-uri-stem"] ?? "";
     const method = entry["cs-method"] ?? "";

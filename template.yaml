@@ -35,7 +35,7 @@ Resources:
   AnalyticsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: analytics/handler.handler
+      Handler: handler.handler
       CodeUri: src/
       Description: Process CloudFront logs and generate chart data
       Environment:
@@ -65,20 +65,6 @@ Resources:
             Schedule: cron(0 6 * * ? *)
             Description: Generate analytics daily at 06:00 UTC
 
-  AsnJobLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${AsnJobFunction}'
-      RetentionInDays: 30
-
-  # Own role, none of the analytics permissions. It gets KeyValueStore write access in Phase K.
-  AsnJobFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: asn-job/handler.handler
-      CodeUri: src/
-      Description: Sync the full ASN -> category list into the CloudFront KeyValueStore (not implemented yet)
-
 Outputs:
   FunctionArn:
     Description: Lambda function ARN
@@ -86,6 +72,3 @@ Outputs:
   FunctionName:
     Description: Lambda function name (for manual invocation)
     Value: !Ref AnalyticsFunction
-  AsnJobFunctionName:
-    Description: ASN job Lambda function name (for manual invocation)
-    Value: !Ref AsnJobFunction

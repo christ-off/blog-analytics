@@ -3,4 +3,6 @@ coverage/
 .DS_Store
 /.idea/
 /.rtk/filters.toml
-/.aws-sam/
+/.aws-sam/build/AnalyticsFunction/handler.mjs
+/.aws-sam/build/template.yaml
+/.aws-sam/build.toml
