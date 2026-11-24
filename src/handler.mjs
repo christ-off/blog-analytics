@@ -39,8 +39,11 @@ const DATE_IN_KEY_RE = /\.(\d{4}-\d{2}-\d{2})-\d{2}\./;
 const NON_VISIT_PATHS = new Set(["/", "/feed.xml", "/rss.xml"]);
 
 const CSS_ASSET_PATH = "/css/main.css";
-const EVIDENCE_ASSET_PATH = "/assets/svgs/ecrit-par-un-humain.svg";
-const TRACKED_ASSET_PATHS = new Set([CSS_ASSET_PATH, EVIDENCE_ASSET_PATH]);
+const EVIDENCE_ASSET_PATHS = new Set([
+  "/assets/svgs/ecrit-par-un-humain.svg",
+  "/favicon.ico",
+  "/apple-touch-icon.png",
+]);
 
 export function isBot(userAgent) {
   if (!userAgent || userAgent === "-") return true;
@@ -65,7 +68,7 @@ export function isFilteredResult(resultType) {
 export function isTrackedAsset(uri, method, status) {
   if (method !== "GET") return false;
   if (!status.startsWith("2") && !status.startsWith("3")) return false;
-  return TRACKED_ASSET_PATHS.has(uri);
+  return uri === CSS_ASSET_PATH || EVIDENCE_ASSET_PATHS.has(uri);
 }
 
 export function parseTsvLines(content) {
@@ -142,7 +145,7 @@ function buildAssetTimestamps(entries) {
       groups.set(key, group);
     }
     if (e.uri === CSS_ASSET_PATH) group.css.push(e.timestamp);
-    if (e.uri === EVIDENCE_ASSET_PATH) group.evidence.push(e.timestamp);
+    if (EVIDENCE_ASSET_PATHS.has(e.uri)) group.evidence.push(e.timestamp);
   }
   return groups;
 }
@@ -158,7 +161,7 @@ function aggregateVisitorsAndPages(entries, assetGroups) {
     if (!hasTimestampWithin(group.evidence, e.timestamp, EVIDENCE_WINDOW_MS)) continue;
 
     if (!dailyVisitors.has(e.date)) dailyVisitors.set(e.date, new Set());
-    dailyVisitors.get(e.date).add(e.ip);
+    dailyVisitors.get(e.date).add(visitorKey(e));
     pageViews.set(e.uri, (pageViews.get(e.uri) ?? 0) + 1);
   }
   return { dailyVisitors, pageViews };
@@ -196,8 +199,8 @@ export async function handler(_event, _context) {
   }
   console.log(`Processed ${filesProcessed} log files`);
 
-  // Only count a page view (by ip+UA) when both the CSS and the evidence
-  // asset were also fetched within ±1 hour of it — a single hotlinked asset,
+  // Only count a page view (by ip+UA) when both the CSS and an evidence
+  // asset (badge SVG, favicon or apple-touch-icon) were also fetched within ±1 hour of it — a single hotlinked asset,
   // or an unrelated visit hours apart from the same ip+UA, isn't enough.
   const assetGroups = buildAssetTimestamps(allEntries);
   const { dailyVisitors, pageViews } = aggregateVisitorsAndPages(allEntries, assetGroups);

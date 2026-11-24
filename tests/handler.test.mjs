@@ -87,6 +87,10 @@ describe("isFilteredResult", () => {
 describe("isTrackedAsset", () => {
   it("accepts /css/main.css GET 200", () =>
     expect(isTrackedAsset("/css/main.css", "GET", "200")).toBe(true));
+  it("accepts /favicon.ico GET 200", () =>
+    expect(isTrackedAsset("/favicon.ico", "GET", "200")).toBe(true));
+  it("accepts /apple-touch-icon.png GET 200", () =>
+    expect(isTrackedAsset("/apple-touch-icon.png", "GET", "200")).toBe(true));
   it("accepts /assets/svgs/ecrit-par-un-humain.svg GET 200", () =>
     expect(isTrackedAsset("/assets/svgs/ecrit-par-un-humain.svg", "GET", "200")).toBe(true));
   it("rejects other assets", () =>

@@ -46,6 +46,13 @@ const LOG_CONTENT = [
   `${TODAY}\t05:15:00\t1.2.3.10\tGET\t/blog/hello/\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:10:00\t1.2.3.10\tGET\t/css/main.css\t200\tMozilla/5.0\tHit`,
   `${TODAY}\t06:14:00\t1.2.3.10\tGET\t/assets/svgs/ecrit-par-un-humain.svg\t200\tMozilla/5.0\tHit`,
+  // same IP, two User-Agents, each with css + an alternative evidence asset — two distinct visitors
+  `${TODAY}\t07:00:00\t1.2.3.11\tGET\t/blog/hello/\t200\tMozilla/5.0 A\tHit`,
+  `${TODAY}\t07:00:01\t1.2.3.11\tGET\t/css/main.css\t200\tMozilla/5.0 A\tHit`,
+  `${TODAY}\t07:00:02\t1.2.3.11\tGET\t/favicon.ico\t200\tMozilla/5.0 A\tHit`,
+  `${TODAY}\t07:01:00\t1.2.3.11\tGET\t/blog/hello/\t200\tMozilla/5.0 B\tHit`,
+  `${TODAY}\t07:01:01\t1.2.3.11\tGET\t/css/main.css\t200\tMozilla/5.0 B\tHit`,
+  `${TODAY}\t07:01:02\t1.2.3.11\tGET\t/apple-touch-icon.png\t200\tMozilla/5.0 B\tHit`,
 ].join("\n");
 
 const makeGzipBody = content => ({
@@ -77,9 +84,9 @@ describe("handler", () => {
     expect(result.statusCode).toBe(200);
     const body = JSON.parse(result.body);
     expect(body.filesProcessed).toBe(1);
-    expect(body.totalUniqueVisitors).toBe(3);
+    expect(body.totalUniqueVisitors).toBe(5);
     expect(body.totalPagesTracked).toBe(1);
-    expect(body.topPage).toEqual(["/blog/hello/", 3]);
+    expect(body.topPage).toEqual(["/blog/hello/", 5]);
   });
 
   it("falls back to raw text when gunzip fails", async () => {
